@@ -14,8 +14,8 @@
       overflow-x: hidden;
     }
     
-    /* Geometric background animation */
-    .background-shapes {
+    /* Vector field background */
+    #vectorField {
       position: fixed;
       top: 0;
       left: 0;
@@ -24,30 +24,6 @@
       pointer-events: none;
       z-index: -1;
     }
-    
-    .shape {
-      position: absolute;
-      opacity: 0.1;
-      border: 2px solid #007acc;
-    }
-    
-    .circle { border-radius: 50%; }
-    .square { transform: rotate(45deg); }
-    
-    @keyframes float {
-      0%, 100% { transform: translateY(0px) rotate(0deg); }
-      50% { transform: translateY(-20px) rotate(5deg); }
-    }
-    
-    @keyframes pulse {
-      0%, 100% { opacity: 0.1; }
-      50% { opacity: 0.2; }
-    }
-    
-    .shape:nth-child(1) { animation: float 6s ease-in-out infinite; }
-    .shape:nth-child(2) { animation: float 8s ease-in-out infinite 1s; }
-    .shape:nth-child(3) { animation: float 10s ease-in-out infinite 2s; }
-    .shape:nth-child(4) { animation: pulse 4s ease-in-out infinite; }
     
     main { 
       margin: 2rem auto; 
@@ -142,12 +118,7 @@
   </style>
 </head>
 <body>
-  <div class="background-shapes">
-    <div class="shape circle" style="width: 200px; height: 200px; top: 10%; left: 5%;"></div>
-    <div class="shape square" style="width: 150px; height: 150px; top: 60%; right: 10%;"></div>
-    <div class="shape circle" style="width: 100px; height: 100px; bottom: 20%; left: 15%;"></div>
-    <div class="shape square" style="width: 180px; height: 180px; top: 30%; right: 5%;"></div>
-  </div>
+  <canvas id="vectorField"></canvas>
   
   <main>
   <header>
@@ -165,7 +136,7 @@
 
   <section id="about">
     <h2>About</h2>
-    <p>I'm Haimo (Edward) Fang, an undergraduate in Economics at Fudan University 
+    <p>I'm Haimo Fang (方海漠), an undergraduate in Economics at Fudan University 
       working at the intersection of statistics, machine learning, and econometrics. 
       My research focuses on statistical inference and uncertainty quantification for ensemble methods, 
       including gradient boosting, explainable boosting machines. 
@@ -192,5 +163,108 @@
     <p>© 2025 Haimo Fang</p>
   </footer>
   </main>
-</body>
-</html>
+  
+  <script>
+    const canvas = document.getElementById('vectorField');
+    const ctx = canvas.getContext('2d');
+    
+    let mouseX = window.innerWidth / 2;
+    let mouseY = window.innerHeight / 2;
+    let isMouseMoving = false;
+    
+    // Canvas setup
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    
+    // Mouse tracking
+    document.addEventListener('mousemove', (e) => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+      isMouseMoving = true;
+      clearTimeout(mouseTimer);
+      mouseTimer = setTimeout(() => { isMouseMoving = false; }, 100);
+    });
+    
+    let mouseTimer;
+    
+    // Vector field parameters
+    const gridSize = 40;
+    const baseAlpha = 0.08;
+    const focusRadius = 200;
+    const arrowSize = 8;
+    
+    function getVectorAtPoint(x, y, time) {
+      const scale = 0.01;
+      const angle = Math.sin(x * scale) + Math.cos(y * scale) + Math.sin((x + y) * 0.005 + time * 0.001);
+      const magnitude = 0.5 + 0.3 * Math.sin(time * 0.001);
+      
+      return {
+        angle: angle,
+        magnitude: magnitude
+      };
+    }
+    
+    function distanceToMouse(x, y) {
+      const dx = x - mouseX;
+      const dy = y - mouseY;
+      return Math.sqrt(dx * dx + dy * dy);
+    }
+    
+    function drawArrow(fromX, fromY, toX, toY, color) {
+      const headlen = 6;
+      const angle = Math.atan2(toY - fromY, toX - fromX);
+      
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(fromX, fromY);
+      ctx.lineTo(toX, toY);
+      ctx.stroke();
+      
+      ctx.beginPath();
+      ctx.moveTo(toX, toY);
+      ctx.lineTo(toX - headlen * Math.cos(angle - Math.PI / 6), toY - headlen * Math.sin(angle - Math.PI / 6));
+      ctx.moveTo(toX, toY);
+      ctx.lineTo(toX - headlen * Math.cos(angle + Math.PI / 6), toY - headlen * Math.sin(angle + Math.PI / 6));
+      ctx.stroke();
+    }
+    
+    function animate(time) {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      for (let x = 0; x < canvas.width; x += gridSize) {
+        for (let y = 0; y < canvas.height; y += gridSize) {
+          const vector = getVectorAtPoint(x, y, time);
+          const distance = distanceToMouse(x, y);
+          
+          // Calculate alpha based on distance to mouse
+          let alpha = baseAlpha;
+          if (distance < focusRadius) {
+            const proximity = 1 - (distance / focusRadius);
+            alpha = baseAlpha + proximity * (0.4 - baseAlpha);
+          }
+          
+          // Skip if too faint
+          if (alpha < 0.02) continue;
+          
+          // Convert to RGB with transparency
+          const color = `rgba(0, 122, 204, ${alpha})`;
+          
+          const endX = x + Math.cos(vector.angle) * arrowSize * vector.magnitude;
+          const endY = y + Math.sin(vector.angle) * arrowSize * vector.magnitude;
+          
+          drawArrow(x, y, endX, endY, color);
+        }
+      }
+      
+      requestAnimationFrame(animate);
+    }
+    
+    animate(0);
+  </script>
