@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Haimo Fang</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body { 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      position: relative;
+      overflow-x: hidden;
+    }
+    
+    /* Geometric background animation */
+    .background-shapes {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: -1;
+    }
+    
+    .shape {
+      position: absolute;
+      opacity: 0.1;
+      border: 2px solid #007acc;
+    }
+    
+    .circle { border-radius: 50%; }
+    .square { transform: rotate(45deg); }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-20px) rotate(5deg); }
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 0.1; }
+      50% { opacity: 0.2; }
+    }
+    
+    .shape:nth-child(1) { animation: float 6s ease-in-out infinite; }
+    .shape:nth-child(2) { animation: float 8s ease-in-out infinite 1s; }
+    .shape:nth-child(3) { animation: float 10s ease-in-out infinite 2s; }
+    .shape:nth-child(4) { animation: pulse 4s ease-in-out infinite; }
+    
+    main { 
+      margin: 2rem auto; 
+      max-width: 800px; 
+      line-height: 1.6;
+      position: relative;
+      z-index: 1;
+    }
+    
+    header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+    
+    .avatar {
+      width: 150px;
+      height: 150px;
+      margin: 0 auto 1.5rem;
+      border-radius: 50%;
+      border: 4px solid #007acc;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(0, 122, 204, 0.2);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .avatar:hover {
+      transform: scale(1.05) rotate(2deg);
+      box-shadow: 0 12px 48px rgba(0, 122, 204, 0.3);
+    }
+    
+    .avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    h1, h2 { color: #333; }
+    h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+    
+    header > p { 
+      color: #666; 
+      font-size: 1.1rem;
+      margin-bottom: 1.5rem;
+    }
+    
+    nav { 
+      margin-bottom: 2rem; 
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+    }
+    
+    nav a { 
+      text-decoration: none; 
+      color: #007acc;
+      font-weight: 500;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    
+    nav a:hover { 
+      background-color: rgba(0, 122, 204, 0.1);
+      color: #005a9c;
+    }
+    
+    section {
+      margin-bottom: 2.5rem;
+      padding: 1.5rem;
+      border-left: 4px solid #007acc;
+      background: rgba(255, 255, 255, 0.7);
+      border-radius: 4px;
+      backdrop-filter: blur(10px);
+    }
+    
+    h2 { margin-bottom: 1rem; font-size: 1.8rem; }
+    
+    ul { margin-left: 1.5rem; }
+    li { margin-bottom: 0.8rem; }
+    
+    a { color: #007acc; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    
+    footer { 
+      margin-top: 3rem; 
+      font-size: 0.9em; 
+      color: #999;
+      text-align: center;
+      padding: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="background-shapes">
+    <div class="shape circle" style="width: 200px; height: 200px; top: 10%; left: 5%;"></div>
+    <div class="shape square" style="width: 150px; height: 150px; top: 60%; right: 10%;"></div>
+    <div class="shape circle" style="width: 100px; height: 100px; bottom: 20%; left: 15%;"></div>
+    <div class="shape square" style="width: 180px; height: 180px; top: 30%; right: 5%;"></div>
+  </div>
+  
+  <main>
+  <header>
+    <div class="avatar">
+      <img src="profile.jpeg" alt="Haimo Fang">
+    </div>
+    <h1>Haimo Fang (方海漠)</h1>
+    <p>Economics @ Fudan | Research Assistant @ Wharton Stats & ORFE</p>
+    <nav>
+      <a href="#about">About</a>
+      <a href="#research">Research</a>
+      <a href="#contact">Contact</a>
+    </nav>
+  </header>
+
+  <section id="about">
+    <h2>About</h2>
+    <p>I'm Haimo (Edward) Fang, an undergraduate in Economics at Fudan University 
+      working at the intersection of statistics, machine learning, and econometrics. 
+      My research focuses on statistical inference and uncertainty quantification for ensemble methods, 
+      including gradient boosting, explainable boosting machines. 
+      Recently I've been drawn to the Bayesian story of Transformer as well.</p>
+  </section>
+
+  <section id="research">
+    <h2>Research</h2>
+    <ul>
+      <li><a href="https://neurips.cc/virtual/2025/loc/san-diego/poster/116752"><strong>Statistical Inference for Gradient Boosting Regression</strong></a> — accepted at NeurIPS 2025 (Poster).</li>
+      <li><a href="https://arxiv.org/abs/2601.18857"><strong>Inference for Explainable Boosting Machines</strong></a> — under review at AISTATS 2026.</li>
+    </ul>
+  </section>
+
+  <section id="contact">
+    <h2>Contact</h2>
+    <p>Email: <a href="mailto:edfang@sas.upenn.edu">edfang@sas.upenn.edu.com</a></p>
+    <p><a href="cv.pdf">Download CV (PDF)</a></p>
+    <p><a href="https://github.com/haimofang">GitHub</a> | 
+       <a href="https://www.linkedin.com/in/haimo-fang-50a085272/">LinkedIn</a></p>
+  </section>
+
+  <footer>
+    <p>© 2025 Haimo Fang</p>
+  </footer>
+  </main>
+</body>
+</html>
