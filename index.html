@@ -218,12 +218,12 @@
           const influence = 1 - (distToMouse / 300);
           const mouseAngle = Math.atan2(dy, dx);
           
-          // Attraction towards mouse
-          vx += Math.cos(mouseAngle) * influence * 3;
-          vy += Math.sin(mouseAngle) * influence * 3;
+          // Reduced attraction towards mouse
+          vx += Math.cos(mouseAngle) * influence * 0.8;
+          vy += Math.sin(mouseAngle) * influence * 0.8;
           
-          // Brighten particle near mouse
-          this.life = Math.min(1, this.life + influence * 0.05);
+          // Slightly brighten particle near mouse
+          this.life = Math.min(1, this.life + influence * 0.02);
         }
         
         this.vx = vx * 0.8 + this.vx * 0.2; // Smooth velocity
@@ -242,7 +242,7 @@
       }
       
       draw() {
-        const opacity = this.life * 0.6;
+        const opacity = this.life * 0.25;
         ctx.fillStyle = `rgba(0, 122, 204, ${opacity})`;
         const size = Math.max(1, this.life * 2);
         ctx.beginPath();
