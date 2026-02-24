@@ -195,18 +195,39 @@
     // Vector field parameters
     const gridSize = 40;
     const baseAlpha = 0.08;
-    const focusRadius = 200;
-    const arrowSize = 8;
+    const focusRadius = 250;
+    const arrowSize = 16;
+    const maxArrowLength = 20;
     
-    function getVectorAtPoint(x, y, time) {
-      const scale = 0.01;
-      const angle = Math.sin(x * scale) + Math.cos(y * scale) + Math.sin((x + y) * 0.005 + time * 0.001);
-      const magnitude = 0.5 + 0.3 * Math.sin(time * 0.001);
-      
-      return {
-        angle: angle,
-        magnitude: magnitude
-      };
+    // Seeded random for consistent turbulence
+    function seededRandom(seed) {
+      const x = Math.sin(seed) * 10000;
+      return x - Math.floor(x);
+    }
+    
+    function getVectorAtPoint(x, y, time, isNearMouse) {
+      if (isNearMouse) {
+        // When near mouse, point towards mouse with turbulence
+        const dx = mouseX - x;
+        const dy = mouseY - y;
+        let angle = Math.atan2(dy, dx);
+        
+        // Add stochastic turbulence
+        const turbulenceSeed = Math.floor(x / gridSize) * 1000 + Math.floor(y / gridSize) + Math.floor(time / 100);
+        const turbulence = (seededRandom(turbulenceSeed) - 0.5) * 0.6; // ±0.3 radians
+        angle += turbulence;
+        
+        const magnitude = 0.8 + 0.2 * Math.sin(time * 0.001);
+        
+        return { angle, magnitude };
+      } else {
+        // Original wave pattern
+        const scale = 0.01;
+        const angle = Math.sin(x * scale) + Math.cos(y * scale) + Math.sin((x + y) * 0.005 + time * 0.001);
+        const magnitude = 0.5 + 0.3 * Math.sin(time * 0.001);
+        
+        return { angle, magnitude };
+      }
     }
     
     function distanceToMouse(x, y) {
@@ -240,8 +261,10 @@
       
       for (let x = 0; x < canvas.width; x += gridSize) {
         for (let y = 0; y < canvas.height; y += gridSize) {
-          const vector = getVectorAtPoint(x, y, time);
           const distance = distanceToMouse(x, y);
+          const isNearMouse = distance < focusRadius;
+          
+          const vector = getVectorAtPoint(x, y, time, isNearMouse);
           
           // Calculate alpha based on distance to mouse
           let alpha = baseAlpha;
@@ -256,8 +279,15 @@
           // Convert to RGB with transparency
           const color = `rgba(0, 122, 204, ${alpha})`;
           
-          const endX = x + Math.cos(vector.angle) * arrowSize * vector.magnitude;
-          const endY = y + Math.sin(vector.angle) * arrowSize * vector.magnitude;
+          // Scale arrow length based on proximity to mouse
+          let arrowLength = arrowSize;
+          if (isNearMouse) {
+            const proximity = 1 - (distance / focusRadius);
+            arrowLength = arrowSize + proximity * (maxArrowLength - arrowSize);
+          }
+          
+          const endX = x + Math.cos(vector.angle) * arrowLength * vector.magnitude;
+          const endY = y + Math.sin(vector.angle) * arrowLength * vector.magnitude;
           
           drawArrow(x, y, endX, endY, color);
         }
