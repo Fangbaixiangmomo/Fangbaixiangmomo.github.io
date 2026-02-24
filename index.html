@@ -170,7 +170,6 @@
     
     let mouseX = window.innerWidth / 2;
     let mouseY = window.innerHeight / 2;
-    let isMouseMoving = false;
     
     // Canvas setup
     function resizeCanvas() {
@@ -185,112 +184,89 @@
     document.addEventListener('mousemove', (e) => {
       mouseX = e.clientX;
       mouseY = e.clientY;
-      isMouseMoving = true;
-      clearTimeout(mouseTimer);
-      mouseTimer = setTimeout(() => { isMouseMoving = false; }, 100);
     });
     
-    let mouseTimer;
-    
-    // Vector field parameters
-    const gridSize = 40;
-    const baseAlpha = 0.08;
-    const focusRadius = 250;
-    const arrowSize = 16;
-    const maxArrowLength = 20;
-    
-    // Seeded random for consistent turbulence
-    function seededRandom(seed) {
-      const x = Math.sin(seed) * 10000;
-      return x - Math.floor(x);
-    }
-    
-    function getVectorAtPoint(x, y, time, isNearMouse) {
-      if (isNearMouse) {
-        // When near mouse, point towards mouse with turbulence
-        const dx = mouseX - x;
-        const dy = mouseY - y;
-        let angle = Math.atan2(dy, dx);
+    // Particle class
+    class Particle {
+      constructor() {
+        this.reset();
+      }
+      
+      reset() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.vx = 0;
+        this.vy = 0;
+        this.life = 1;
+      }
+      
+      update(time) {
+        // Base vector field
+        const scale = 0.005;
+        const baseAngle = Math.sin(this.x * scale) * 0.5 + Math.cos(this.y * scale) * 0.5 + Math.sin((this.x + this.y) * 0.002 + time * 0.0005);
+        const baseMag = 1.5;
         
-        // Add stochastic turbulence
-        const turbulenceSeed = Math.floor(x / gridSize) * 1000 + Math.floor(y / gridSize) + Math.floor(time / 100);
-        const turbulence = (seededRandom(turbulenceSeed) - 0.5) * 0.6; // ±0.3 radians
-        angle += turbulence;
+        let vx = Math.cos(baseAngle) * baseMag;
+        let vy = Math.sin(baseAngle) * baseMag;
         
-        const magnitude = 0.8 + 0.2 * Math.sin(time * 0.001);
+        // Mouse attraction/repulsion
+        const dx = mouseX - this.x;
+        const dy = mouseY - this.y;
+        const distToMouse = Math.sqrt(dx * dx + dy * dy);
         
-        return { angle, magnitude };
-      } else {
-        // Original wave pattern
-        const scale = 0.01;
-        const angle = Math.sin(x * scale) + Math.cos(y * scale) + Math.sin((x + y) * 0.005 + time * 0.001);
-        const magnitude = 0.5 + 0.3 * Math.sin(time * 0.001);
+        if (distToMouse < 300) {
+          const influence = 1 - (distToMouse / 300);
+          const mouseAngle = Math.atan2(dy, dx);
+          
+          // Attraction towards mouse
+          vx += Math.cos(mouseAngle) * influence * 3;
+          vy += Math.sin(mouseAngle) * influence * 3;
+          
+          // Brighten particle near mouse
+          this.life = Math.min(1, this.life + influence * 0.05);
+        }
         
-        return { angle, magnitude };
+        this.vx = vx * 0.8 + this.vx * 0.2; // Smooth velocity
+        this.vy = vy * 0.8 + this.vy * 0.2;
+        
+        this.x += this.vx;
+        this.y += this.vy;
+        
+        // Fade out gradually
+        this.life *= 0.998;
+        
+        // Wrap around or reset
+        if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height || this.life < 0.01) {
+          this.reset();
+        }
+      }
+      
+      draw() {
+        const opacity = this.life * 0.6;
+        ctx.fillStyle = `rgba(0, 122, 204, ${opacity})`;
+        const size = Math.max(1, this.life * 2);
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, size, 0, Math.PI * 2);
+        ctx.fill();
       }
     }
     
-    function distanceToMouse(x, y) {
-      const dx = x - mouseX;
-      const dy = y - mouseY;
-      return Math.sqrt(dx * dx + dy * dy);
-    }
-    
-    function drawArrow(fromX, fromY, toX, toY, color) {
-      const headlen = 6;
-      const angle = Math.atan2(toY - fromY, toX - fromX);
-      
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.moveTo(fromX, fromY);
-      ctx.lineTo(toX, toY);
-      ctx.stroke();
-      
-      ctx.beginPath();
-      ctx.moveTo(toX, toY);
-      ctx.lineTo(toX - headlen * Math.cos(angle - Math.PI / 6), toY - headlen * Math.sin(angle - Math.PI / 6));
-      ctx.moveTo(toX, toY);
-      ctx.lineTo(toX - headlen * Math.cos(angle + Math.PI / 6), toY - headlen * Math.sin(angle + Math.PI / 6));
-      ctx.stroke();
+    // Initialize particles
+    const particleCount = 400;
+    const particles = [];
+    for (let i = 0; i < particleCount; i++) {
+      particles.push(new Particle());
     }
     
     function animate(time) {
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+      // Semi-transparent background for trail effect
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       
-      for (let x = 0; x < canvas.width; x += gridSize) {
-        for (let y = 0; y < canvas.height; y += gridSize) {
-          const distance = distanceToMouse(x, y);
-          const isNearMouse = distance < focusRadius;
-          
-          const vector = getVectorAtPoint(x, y, time, isNearMouse);
-          
-          // Calculate alpha based on distance to mouse
-          let alpha = baseAlpha;
-          if (distance < focusRadius) {
-            const proximity = 1 - (distance / focusRadius);
-            alpha = baseAlpha + proximity * (0.4 - baseAlpha);
-          }
-          
-          // Skip if too faint
-          if (alpha < 0.02) continue;
-          
-          // Convert to RGB with transparency
-          const color = `rgba(0, 122, 204, ${alpha})`;
-          
-          // Scale arrow length based on proximity to mouse
-          let arrowLength = arrowSize;
-          if (isNearMouse) {
-            const proximity = 1 - (distance / focusRadius);
-            arrowLength = arrowSize + proximity * (maxArrowLength - arrowSize);
-          }
-          
-          const endX = x + Math.cos(vector.angle) * arrowLength * vector.magnitude;
-          const endY = y + Math.sin(vector.angle) * arrowLength * vector.magnitude;
-          
-          drawArrow(x, y, endX, endY, color);
-        }
+      // Update and draw particles
+      for (let particle of particles) {
+        particle.update(time);
+        particle.draw();
       }
       
       requestAnimationFrame(animate);
