@@ -26,22 +26,42 @@
     }
     
     main { 
+      display: grid;
+      grid-template-columns: 1fr 350px;
+      gap: 2rem;
       margin: 2rem auto; 
-      max-width: 800px; 
+      max-width: 1100px; 
       line-height: 1.6;
       position: relative;
       z-index: 1;
+      padding: 0 2rem;
+    }
+    
+    .content {
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+    
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: sticky;
+      top: 2rem;
     }
     
     header {
-      text-align: center;
-      margin-bottom: 3rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 0;
     }
     
     .avatar {
-      width: 150px;
-      height: 150px;
-      margin: 0 auto 1.5rem;
+      width: 280px;
+      height: 280px;
+      margin-bottom: 1.5rem;
       border-radius: 50%;
       border: 4px solid #007acc;
       overflow: hidden;
@@ -61,29 +81,33 @@
     }
     
     h1, h2 { color: #333; }
-    h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+    h1 { font-size: 1.8rem; margin-bottom: 0.5rem; text-align: center; }
     
     header > p { 
       color: #666; 
-      font-size: 1.1rem;
+      font-size: 0.95rem;
       margin-bottom: 1.5rem;
+      text-align: center;
+      line-height: 1.4;
     }
     
     nav { 
-      margin-bottom: 2rem; 
+      margin-bottom: 0; 
       display: flex;
-      justify-content: center;
-      gap: 1.5rem;
-      flex-wrap: wrap;
+      flex-direction: column;
+      gap: 0.5rem;
+      width: 100%;
     }
     
     nav a { 
       text-decoration: none; 
       color: #007acc;
       font-weight: 500;
-      padding: 0.5rem 1rem;
+      padding: 0.7rem 1rem;
       border-radius: 4px;
       transition: background-color 0.3s ease, color 0.3s ease;
+      text-align: center;
+      font-size: 0.95rem;
     }
     
     nav a:hover { 
@@ -121,60 +145,64 @@
   <canvas id="vectorField"></canvas>
   
   <main>
-  <header>
-    <div class="avatar">
-      <img src="profile.jpeg" alt="Haimo Fang">
+    <div class="content">
+      <section id="about">
+        <h2>About</h2>
+        <p>I'm Haimo Fang (方海漠), an undergraduate in Economics at Fudan University 
+          working at the intersection of statistics, machine learning, and econometrics. 
+          My research focuses on statistical inference and uncertainty quantification for ensemble methods, 
+          including gradient boosting, explainable boosting machines. 
+          Recently I've been drawn to the Bayesian story of Transformer as well.</p>
+      </section>
+
+      <section id="research">
+        <h2>Research</h2>
+        <ul>
+          <li><a href="https://neurips.cc/virtual/2025/loc/san-diego/poster/116752"><strong>Statistical Inference for Gradient Boosting Regression</strong></a> — accepted at NeurIPS 2025 (Poster).</li>
+          <li><a href="https://arxiv.org/abs/2601.18857"><strong>Statistical Inference for Explainable Boosting Machines</strong></a> — accepted at AISTATS 2026 (Poster).</li>
+        </ul>
+      </section>
+
+      <section id="notes">
+        <h2>Notes & Writeups</h2>
+        <p><strong>ECON130277H Cross-Sectional and Panel Data Analysis</strong> (Fudan University, Prof. Ruochen Wu)</p>
+        <p>
+          These are my personal LaTeX-ed lecture notes—compiled mainly so I (and anyone taking the course after me) don't have to
+          re-learn the same things from scattered slides, half-legible scribbles, and last-minute panic.
+          Not official materials, and definitely contain my own mistakes in places, but I've tried to keep the structure clean and the derivations honest.
+          If you spot an error, please tell me—I'll be grateful and slightly embarrassed in the productive way.
+        </p>
+        <p><a href="notes.pdf">View Course Notes (PDF)</a></p>
+      </section>
+
+      <section id="contact">
+        <h2>Contact</h2>
+        <p>Email: <a href="mailto:edfang@sas.upenn.edu">edfang@sas.upenn.edu</a></p>
+        <p><a href="cv.pdf">Download CV (PDF)</a></p>
+        <p><a href="https://github.com/haimofang">GitHub</a> | 
+           <a href="https://www.linkedin.com/in/haimo-fang-50a085272/">LinkedIn</a></p>
+      </section>
+
+      <footer>
+        <p>© 2025 Haimo Fang</p>
+      </footer>
     </div>
-    <h1>Haimo Fang (方海漠)</h1>
-    <p>Economics @ Fudan | Research Assistant @ Wharton Stats & ORFE</p>
-    <nav>
-      <a href="#about">About</a>
-      <a href="#research">Research</a>
-      <a href="#notes">Notes & Writeups</a>
-      <a href="#contact">Contact</a>
-    </nav>
-  </header>
-
-  <section id="about">
-    <h2>About</h2>
-    <p>I'm Haimo Fang (方海漠), an undergraduate in Economics at Fudan University 
-      working at the intersection of statistics, machine learning, and econometrics. 
-      My research focuses on statistical inference and uncertainty quantification for ensemble methods, 
-      including gradient boosting, explainable boosting machines. 
-      Recently I've been drawn to the Bayesian story of Transformer as well.</p>
-  </section>
-
-  <section id="research">
-    <h2>Research</h2>
-    <ul>
-      <li><a href="https://neurips.cc/virtual/2025/loc/san-diego/poster/116752"><strong>Statistical Inference for Gradient Boosting Regression</strong></a> — accepted at NeurIPS 2025 (Poster).</li>
-      <li><a href="https://arxiv.org/abs/2601.18857"><strong>Statistical Inference for Explainable Boosting Machines</strong></a> — accepted at AISTATS 2026 (Poster).</li>
-    </ul>
-  </section>
-
-  <section id="notes">
-  <h2>Notes & Writeups</h2>
-  <p><strong>ECON130277H Cross-Sectional and Panel Data Analysis</strong> (Fudan University, Prof. Ruochen Wu)</p>
-  <p>
-    These are my personal LaTeX-ed lecture notes—compiled mainly so I (and anyone taking the course after me) don't have to
-    re-learn the same things from scattered slides, half-legible scribbles, and last-minute panic.
-    Not official materials, and definitely contain my own mistakes in places, but I've tried to keep the structure clean and the derivations honest.
-    If you spot an error, please tell me—I'll be grateful and slightly embarrassed in the productive way.
-  </p>
-  <p><a href="notes.pdf">View Course Notes (PDF)</a></p>
-</section>
-
-  <section id="contact">
-    <h2>Contact</h2>
-    <p>Email: <a href="mailto:edfang@sas.upenn.edu">edfang@sas.upenn.edu.com</a></p>
-    <p><a href="cv.pdf">Download CV (PDF)</a></p>
-    <p><a href="https://github.com/haimofang">GitHub</a> | 
-       <a href="https://www.linkedin.com/in/haimo-fang-50a085272/">LinkedIn</a></p>
-  </section>
-
-  <footer>
-    <p>© 2025 Haimo Fang</p>
-  </footer>
+    
+    <div class="sidebar">
+      <header>
+        <div class="avatar">
+          <img src="profile.jpeg" alt="Haimo Fang">
+        </div>
+        <h1>Haimo Fang (方海漠)</h1>
+        <p>Economics @ Fudan | Research Assistant @ Wharton Stats & ORFE</p>
+        <nav>
+          <a href="#about">About</a>
+          <a href="#research">Research</a>
+          <a href="#notes">Notes & Writeups</a>
+          <a href="#contact">Contact</a>
+        </nav>
+      </header>
+    </div>
   </main>
   
   <script>
