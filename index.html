@@ -190,6 +190,25 @@
     
     ul { margin-left: 1.5rem; }
     li { margin-bottom: 0.8rem; }
+
+    .cv-list {
+      list-style: none;
+      margin-left: 0;
+    }
+
+    .cv-list li {
+      margin-bottom: 1rem;
+    }
+
+    .cv-entry-title {
+      color: #222;
+    }
+
+    .cv-entry-meta {
+      margin-top: 0.2rem;
+      color: #555;
+      font-size: 0.95rem;
+    }
     
     a { color: #007acc; text-decoration: none; }
     a:hover { text-decoration: underline; }
@@ -241,7 +260,8 @@
         <p>
           I'm Haimo Fang (方海漠), an Economics undergraduate at Fudan University interested in statistical machine learning and econometrics. 
           My current work studies statistical inference and uncertainty quantification for ensemble methods, including gradient boosting and explainable boosting machines. 
-          Lately, I've also been exploring Bayesian viewpoints for Transformers.
+          Lately, I've also been exploring Bayesian viewpoints for Transformers. 
+          I currently work as a research assistant with <a href="https://gileshooker.com/">Giles Hooker</a> at Wharton Statistics and with the ORFE group at Princeton.
         </p>
       </section>
 
@@ -276,9 +296,21 @@
 
       <section id="teaching">
         <h2>Teaching</h2>
-        <ul>
-          <li>Teaching Assistant, Mathematical Analysis BII (2024-2025 Spring Semester)</li>
-          <li>Teaching Assistant, Mathematical Analysis BI (2025-2026 Fall Semester)</li>
+        <ul class="cv-list">
+          <li>
+            <div class="cv-entry-title">Teaching Assistant, <strong>Mathematical Analysis BII</strong></div>
+            <div class="cv-entry-meta">
+              School of Economics, Fudan University · 2024-2025 Spring Semester · Instructor:
+              <a href="https://math.tongji.edu.cn/info/1151/10259.htm">Prof. Wu, Peng</a>
+            </div>
+          </li>
+          <li>
+            <div class="cv-entry-title">Teaching Assistant, <strong>Mathematical Analysis BII</strong></div>
+            <div class="cv-entry-meta">
+              School of Economics, Fudan University · 2025-2026 Fall Semester · Instructor:
+              <a href="https://math.tongji.edu.cn/info/1151/10259.htm">Prof. Wu, Peng</a>
+            </div>
+          </li>
         </ul>
       </section>
 
@@ -359,111 +391,214 @@
   <script>
     const canvas = document.getElementById('vectorField');
     const ctx = canvas.getContext('2d');
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
     
     let mouseX = window.innerWidth / 2;
     let mouseY = window.innerHeight / 2;
+    let particles = [];
     
-    // Canvas setup
+    function isMobileViewport() {
+      return window.innerWidth <= 768;
+    }
+
+    function fieldVector(x, y, time, layer = 'background') {
+      const scale = 0.005;
+      const timeScale = layer === 'foreground' ? 0.00065 : 0.00035;
+      const baseAngle =
+        Math.sin(x * scale) * 0.55 +
+        Math.cos(y * scale) * 0.45 +
+        Math.sin((x + y) * 0.002 + time * timeScale);
+      const magnitude = layer === 'foreground' ? 1.55 : 1.0;
+
+      let vx = Math.cos(baseAngle) * magnitude;
+      let vy = Math.sin(baseAngle) * magnitude;
+
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+      const dxCenter = x - cx;
+      const dyCenter = y - cy;
+      const distCenter = Math.sqrt(dxCenter * dxCenter + dyCenter * dyCenter) || 1;
+      const swirl = layer === 'foreground' ? 0.12 : 0.07;
+      vx += (-dyCenter / distCenter) * swirl;
+      vy += (dxCenter / distCenter) * swirl;
+
+      return { vx, vy };
+    }
+
     function resizeCanvas() {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
+      buildParticles();
     }
     
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
-    
-    // Mouse tracking
-    document.addEventListener('mousemove', (e) => {
+    // Mouse / pointer tracking
+    document.addEventListener('pointermove', (e) => {
       mouseX = e.clientX;
       mouseY = e.clientY;
     });
     
-    // Particle class
+    document.addEventListener('touchmove', (e) => {
+      if (!e.touches || !e.touches[0]) return;
+      mouseX = e.touches[0].clientX;
+      mouseY = e.touches[0].clientY;
+    }, { passive: true });
+    
     class Particle {
-      constructor() {
+      constructor(layer) {
+        this.layer = layer;
+        this.hueShift = (Math.random() - 0.5) * 18;
         this.reset();
       }
       
       reset() {
         this.x = Math.random() * canvas.width;
         this.y = Math.random() * canvas.height;
+        this.px = this.x;
+        this.py = this.y;
         this.vx = 0;
         this.vy = 0;
-        this.life = 1;
+        this.life = 0.5 + Math.random() * 0.5;
       }
       
       update(time) {
-        // Base vector field
-        const scale = 0.005;
-        const baseAngle = Math.sin(this.x * scale) * 0.5 + Math.cos(this.y * scale) * 0.5 + Math.sin((this.x + this.y) * 0.002 + time * 0.0005);
-        const baseMag = 1.5;
+        const layerSpeed = this.layer === 'foreground' ? 1.2 : 0.65;
+        const motionScale = prefersReducedMotion.matches ? 0.45 : 1;
+        const baseField = fieldVector(this.x, this.y, time, this.layer);
         
-        let vx = Math.cos(baseAngle) * baseMag;
-        let vy = Math.sin(baseAngle) * baseMag;
+        let vx = baseField.vx * layerSpeed * motionScale;
+        let vy = baseField.vy * layerSpeed * motionScale;
         
-        // Mouse attraction/repulsion
         const dx = mouseX - this.x;
         const dy = mouseY - this.y;
         const distToMouse = Math.sqrt(dx * dx + dy * dy);
         
-        if (distToMouse < 300) {
-          const influence = 1 - (distToMouse / 300);
+        const mouseRadius = isMobileViewport() ? 180 : 280;
+        if (distToMouse < mouseRadius) {
+          const influence = 1 - (distToMouse / mouseRadius);
           const mouseAngle = Math.atan2(dy, dx);
-          
-          // Reduced attraction towards mouse
-          vx += Math.cos(mouseAngle) * influence * 0.8;
-          vy += Math.sin(mouseAngle) * influence * 0.8;
-          
-          // Slightly brighten particle near mouse
-          this.life = Math.min(1, this.life + influence * 0.02);
+
+          const mouseForce = (this.layer === 'foreground' ? 0.7 : 0.35) * motionScale;
+          vx += Math.cos(mouseAngle) * influence * mouseForce;
+          vy += Math.sin(mouseAngle) * influence * mouseForce;
+          this.life = Math.min(1, this.life + influence * 0.025);
         }
         
-        this.vx = vx * 0.8 + this.vx * 0.2; // Smooth velocity
+        this.px = this.x;
+        this.py = this.y;
+
+        this.vx = vx * 0.8 + this.vx * 0.2;
         this.vy = vy * 0.8 + this.vy * 0.2;
         
         this.x += this.vx;
         this.y += this.vy;
         
-        // Fade out gradually
-        this.life *= 0.998;
+        this.life *= this.layer === 'foreground' ? 0.9975 : 0.9985;
         
-        // Wrap around or reset
         if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height || this.life < 0.01) {
           this.reset();
         }
       }
       
       draw() {
-        const opacity = this.life * 0.25;
-        ctx.fillStyle = `rgba(0, 122, 204, ${opacity})`;
-        const size = Math.max(1, this.life * 2);
+        const hue = 202 + this.hueShift;
+        const sat = this.layer === 'foreground' ? '80%' : '72%';
+        const light = this.layer === 'foreground' ? '46%' : '58%';
+        const alpha = this.life * (this.layer === 'foreground' ? 0.22 : 0.11);
+        const strokeAlpha = this.life * (this.layer === 'foreground' ? 0.12 : 0.05);
+
+        ctx.strokeStyle = `hsla(${hue}, ${sat}, ${light}, ${strokeAlpha})`;
+        ctx.lineWidth = this.layer === 'foreground' ? 1 : 0.7;
+        ctx.beginPath();
+        ctx.moveTo(this.px, this.py);
+        ctx.lineTo(this.x, this.y);
+        ctx.stroke();
+
+        ctx.fillStyle = `hsla(${hue}, ${sat}, ${light}, ${alpha})`;
+        const size = this.layer === 'foreground'
+          ? Math.max(1.05, this.life * 2.1)
+          : Math.max(0.7, this.life * 1.35);
         ctx.beginPath();
         ctx.arc(this.x, this.y, size, 0, Math.PI * 2);
         ctx.fill();
       }
     }
-    
-    // Initialize particles
-    const particleCount = 400;
-    const particles = [];
-    for (let i = 0; i < particleCount; i++) {
-      particles.push(new Particle());
+
+    function drawFieldLattice(time) {
+      if (prefersReducedMotion.matches) return;
+
+      const spacing = isMobileViewport() ? 64 : 52;
+      const margin = spacing;
+
+      ctx.save();
+      ctx.lineCap = 'round';
+
+      for (let y = margin; y < canvas.height - margin; y += spacing) {
+        for (let x = margin; x < canvas.width - margin; x += spacing) {
+          const field = fieldVector(x, y, time, 'background');
+          const len = Math.sqrt(field.vx * field.vx + field.vy * field.vy) || 1;
+          const ux = field.vx / len;
+          const uy = field.vy / len;
+          const seg = isMobileViewport() ? 8 : 10;
+
+          const phase = 0.5 + 0.5 * Math.sin((x + y) * 0.015 + time * 0.001);
+          const alpha = 0.025 + phase * 0.025;
+
+          ctx.strokeStyle = `rgba(92, 99, 178, ${alpha})`;
+          ctx.lineWidth = 0.8;
+          ctx.beginPath();
+          ctx.moveTo(x - ux * seg, y - uy * seg);
+          ctx.lineTo(x + ux * seg, y + uy * seg);
+          ctx.stroke();
+
+          ctx.fillStyle = `rgba(92, 99, 178, ${alpha * 0.9})`;
+          ctx.beginPath();
+          ctx.arc(x, y, 0.85, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      ctx.restore();
+    }
+
+    function buildParticles() {
+      const baseCount = prefersReducedMotion.matches
+        ? 80
+        : isMobileViewport() ? 180 : 360;
+      const foregroundCount = Math.round(baseCount * 0.35);
+      const backgroundCount = baseCount - foregroundCount;
+
+      particles = [];
+      for (let i = 0; i < backgroundCount; i++) {
+        particles.push(new Particle('background'));
+      }
+      for (let i = 0; i < foregroundCount; i++) {
+        particles.push(new Particle('foreground'));
+      }
     }
     
     function animate(time) {
-      // Semi-transparent background for trail effect
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+      ctx.fillStyle = prefersReducedMotion.matches
+        ? 'rgba(255, 255, 255, 0.16)'
+        : 'rgba(255, 255, 255, 0.07)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      drawFieldLattice(time);
       
-      // Update and draw particles
-      for (let particle of particles) {
+      for (const particle of particles) {
         particle.update(time);
         particle.draw();
       }
       
       requestAnimationFrame(animate);
     }
-    
+
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    if (prefersReducedMotion.addEventListener) {
+      prefersReducedMotion.addEventListener('change', buildParticles);
+    } else if (prefersReducedMotion.addListener) {
+      prefersReducedMotion.addListener(buildParticles);
+    }
     animate(0);
   </script>
 </body>
