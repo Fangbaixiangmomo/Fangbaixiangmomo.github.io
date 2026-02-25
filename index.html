@@ -155,14 +155,29 @@
     
     @media (max-width: 1024px) {
       main {
+        display: flex;
+        flex-direction: column;
         max-width: 100%;
-        padding-right: 2rem;
+        margin: 1rem auto;
+        padding: 0 1rem;
+        padding-right: 1rem;
       }
       .sidebar {
-        position: sticky;
-        top: 2rem;
+        position: static;
+        order: -1;
         right: auto;
         width: 100%;
+        margin-bottom: 1rem;
+      }
+      .avatar {
+        width: min(220px, 60vw);
+        height: min(220px, 60vw);
+      }
+      h1 {
+        font-size: 1.5rem;
+      }
+      nav {
+        max-width: 420px;
       }
     }
   </style>
