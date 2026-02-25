@@ -13,6 +13,7 @@
   <meta property="og:type" content="website">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
     
     body { 
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
@@ -30,6 +31,20 @@
       height: 100%;
       pointer-events: none;
       z-index: -1;
+    }
+
+    #scrollProgress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      width: 100%;
+      transform-origin: left center;
+      transform: scaleX(0);
+      background: linear-gradient(90deg, rgba(0, 122, 204, 0.9), rgba(26, 188, 156, 0.75));
+      z-index: 20;
+      pointer-events: none;
+      box-shadow: 0 0 10px rgba(0, 122, 204, 0.22);
     }
     
     main { 
@@ -163,8 +178,9 @@
       color: #007acc;
       font-weight: 500;
       padding: 0.7rem 1rem;
-      border-radius: 4px;
-      transition: background-color 0.3s ease, color 0.3s ease;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, transform 0.2s ease;
       text-align: center;
       font-size: 0.95rem;
     }
@@ -172,6 +188,14 @@
     nav a:hover { 
       background-color: rgba(0, 122, 204, 0.1);
       color: #005a9c;
+      transform: translateY(-1px);
+    }
+
+    nav a.active {
+      background: rgba(0, 122, 204, 0.12);
+      border-color: rgba(0, 122, 204, 0.2);
+      color: #005a9c;
+      box-shadow: inset 2px 0 0 rgba(0, 122, 204, 0.65);
     }
     
     section {
@@ -184,6 +208,24 @@
       -webkit-backdrop-filter: blur(15px);
       border: 1px solid rgba(255, 255, 255, 0.3);
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+      transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease, opacity 0.45s ease;
+      scroll-margin-top: 1rem;
+    }
+
+    section:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 26px rgba(0, 0, 0, 0.07);
+      border-color: rgba(255, 255, 255, 0.4);
+    }
+
+    section.reveal {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+
+    section.reveal.is-visible {
+      opacity: 1;
+      transform: translateY(0);
     }
     
     h2 { margin-bottom: 1rem; font-size: 1.8rem; }
@@ -248,10 +290,17 @@
         max-width: 420px;
       }
     }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      nav a, section { transition: none; }
+      section.reveal { opacity: 1; transform: none; }
+    }
   </style>
 </head>
 <body>
   <canvas id="vectorField"></canvas>
+  <div id="scrollProgress" aria-hidden="true"></div>
   
   <main>
     <div class="content">
@@ -392,6 +441,9 @@
     const canvas = document.getElementById('vectorField');
     const ctx = canvas.getContext('2d');
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const progressBar = document.getElementById('scrollProgress');
+    const sections = Array.from(document.querySelectorAll('main section[id]'));
+    const navLinks = Array.from(document.querySelectorAll('nav a[href^="#"]'));
     
     let mouseX = window.innerWidth / 2;
     let mouseY = window.innerHeight / 2;
@@ -592,13 +644,71 @@
       requestAnimationFrame(animate);
     }
 
+    function updateScrollProgress() {
+      const doc = document.documentElement;
+      const scrollable = doc.scrollHeight - window.innerHeight;
+      const progress = scrollable > 0 ? window.scrollY / scrollable : 0;
+      progressBar.style.transform = `scaleX(${Math.max(0, Math.min(1, progress))})`;
+    }
+
+    function setActiveNavLink(sectionId) {
+      for (const link of navLinks) {
+        const isActive = link.getAttribute('href') === `#${sectionId}`;
+        link.classList.toggle('active', isActive);
+        if (isActive) {
+          link.setAttribute('aria-current', 'location');
+        } else {
+          link.removeAttribute('aria-current');
+        }
+      }
+    }
+
+    function initSectionInteractions() {
+      if (!sections.length) return;
+
+      for (const section of sections) {
+        section.classList.add('reveal');
+      }
+
+      if (prefersReducedMotion.matches || !('IntersectionObserver' in window)) {
+        for (const section of sections) section.classList.add('is-visible');
+        setActiveNavLink(sections[0].id);
+        return;
+      }
+
+      const revealObserver = new IntersectionObserver((entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible');
+          }
+        }
+      }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
+
+      const activeObserver = new IntersectionObserver((entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+        if (visible[0]) {
+          setActiveNavLink(visible[0].target.id);
+        }
+      }, { threshold: [0.2, 0.4, 0.6], rootMargin: '-10% 0px -55% 0px' });
+
+      for (const section of sections) {
+        revealObserver.observe(section);
+        activeObserver.observe(section);
+      }
+    }
+
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('scroll', updateScrollProgress, { passive: true });
     if (prefersReducedMotion.addEventListener) {
       prefersReducedMotion.addEventListener('change', buildParticles);
     } else if (prefersReducedMotion.addListener) {
       prefersReducedMotion.addListener(buildParticles);
     }
+    initSectionInteractions();
+    updateScrollProgress();
     animate(0);
   </script>
 </body>
